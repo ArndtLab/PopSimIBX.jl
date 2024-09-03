@@ -148,4 +148,19 @@ end
 
         @test sum(h.weights) + toolo + toohi == length(si)
     end
+
+    for i in 1:10
+        local pop = StationaryPopulation(;genome_length = 1_000_000, recombination_rate = 1e-6)
+        local h = Histogram(1:1_000)
+        local si = collect(SMCprime.IBDIterator(pop))
+        append!(h, si)
+        c1 = sum(x->segment_length(x)==1, si)
+        c2 = sum(x->segment_length(x)==2, si)
+        c3 = sum(x->segment_length(x)==3, si)
+        c50 = sum(x->segment_length(x)==50, si)
+        @test c1 == h.weights[1]
+        @test c2 == h.weights[2]
+        @test c3 == h.weights[3]
+        @test c50 == h.weights[50]
+    end
 end

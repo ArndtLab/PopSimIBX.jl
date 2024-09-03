@@ -1,7 +1,8 @@
 
 
 
-function Base.append!(h::AbstractHistogram{T,1}, si::Union{AbstractSegmentalsIterator, Vector{Segmentals.Segmental{S}}}, 
+function Base.append!(h::AbstractHistogram{T,1}, 
+    si::Union{AbstractSegmentalsIterator, Vector{Segmentals.Segmental{S}}}, 
     func = segment_length) where {T, S}
 
     @assert h.closed == :left

@@ -12,11 +12,33 @@ using PopSimIBX
 using StatsBase
 
 
-pop = StationaryPopulation(;genome_length = 100_000_000, mutation_rate = 1e-7, recombination_rate = 1e-7)
+pop = StationaryPopulation(;
+    popoulation_size = 1000,
+    genome_length = 100_000_000, 
+    mutation_rate = 1e-7, recombination_rate = 1e-7)
 
 
 hist = Histogram(1:1000:1_000_001)
 append!(hist, IBSIterator(SMCprime.IBDIterator(pop), pop.mutation_rate))
+```
 
 
+
+
+```julia
+using PopSimIBX
+using StatsBase
+
+Ts = [0, 200, 400]
+Ns = [1_000, 100, 1_000]
+
+pop = VaryingPopulation(;
+    genome_length = 100_000_000, 
+    mutation_rate = 1e-7, recombination_rate = 1e-7,
+    population_sizes = Ns,
+    times = Ts
+    )
+
+hist = Histogram(1:1000:1_000_001)
+append!(hist, IBSIterator(SMCprime.IBDIterator(pop), pop.mutation_rate))
 ```

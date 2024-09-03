@@ -2,7 +2,7 @@ module Iterators
 
 
 
-export IBAIterrator, IBSIterrator
+export IBAIterator, IBSIterator
 
 using ..Segmentals
 using ..CoalescentTrees
@@ -12,21 +12,21 @@ using Distributions
 
 
 
-mutable struct IBAIterrator{T} <: AbstractSegmentalsIterator
+mutable struct IBAIterator{T} <: AbstractSegmentalsIterator
     ibds::T
 end
 
 
-Base.IteratorSize(::Type{IBAIterrator{T}}) where T = Base.SizeUnknown()
-Base.IteratorEltype(::Type{IBAIterrator{T}}) where T = Base.HasEltype()
-Base.eltype(::Type{IBAIterrator{T}}) where {T} = Segmentals.Segmental{CoalescentTrees.SimpleCoalescentTree{Int64}}
+Base.IteratorSize(::Type{IBAIterator{T}}) where T = Base.SizeUnknown()
+Base.IteratorEltype(::Type{IBAIterator{T}}) where T = Base.HasEltype()
+Base.eltype(::Type{IBAIterator{T}}) where {T} = Segmentals.Segmental{CoalescentTrees.SimpleCoalescentTree{Int64}}
 
-function Base.iterate(ai::IBAIterrator{T}) where T
+function Base.iterate(ai::IBAIterator{T}) where T
     f = iterate(ai.ibds)
     iterate(ai, f)
 end
 
-function Base.iterate(ai::IBAIterrator{T}, state) where T
+function Base.iterate(ai::IBAIterator{T}, state) where T
     isnothing(state) && return nothing
 
     seg = state[1]
@@ -79,22 +79,22 @@ end
 
 
 
-mutable struct IBSIterrator{T} <: AbstractSegmentalsIterator
+mutable struct IBSIterator{T} <: AbstractSegmentalsIterator
     ibxs::T
     breaks::Vector{Int64}
     lastibxstop::Int64
     mutation_rate::Float64
 end
 
-IBSIterrator(ibx, mutation_rate) = IBSIterrator(ibx, Int[], 0, mutation_rate)
+IBSIterator(ibx, mutation_rate) = IBSIterator(ibx, Int[], 0, mutation_rate)
 
 
-Base.IteratorSize(::Type{IBSIterrator{T}}) where T = Base.SizeUnknown()
-Base.IteratorEltype(::Type{IBSIterrator{T}}) where T = Base.HasEltype()
-Base.eltype(::Type{IBSIterrator{T}}) where {T} = Segmentals.Segmental{Int64}
+Base.IteratorSize(::Type{IBSIterator{T}}) where T = Base.SizeUnknown()
+Base.IteratorEltype(::Type{IBSIterator{T}}) where T = Base.HasEltype()
+Base.eltype(::Type{IBSIterator{T}}) where {T} = Segmentals.Segmental{Int64}
 
 
-mutable struct IBSIterratorState{T}
+mutable struct IBSIteratorState{T}
     ibxstate::Union{Nothing, T}
     laststop::Int64
     b::Int64
@@ -102,7 +102,7 @@ end
 
 
 
-function Base.iterate(si::IBSIterrator)
+function Base.iterate(si::IBSIterator)
     ibx = iterate(si.ibxs)
     isnothing(ibx) && return nothing # no ibx to iterate
 
@@ -111,12 +111,12 @@ function Base.iterate(si::IBSIterrator)
     dt = time_span(data(seg))
     si.breaks = (start(seg) - 1) .+ break_segment(segment_length(seg), 2 * si.mutation_rate * dt)
     si.lastibxstop = stop(seg)
-    state = IBSIterratorState(ibx[2], 0, 1)
+    state = IBSIteratorState(ibx[2], 0, 1)
     iterate(si, state)
 end
 
 
-function Base.iterate(si::IBSIterrator, state)
+function Base.iterate(si::IBSIterator, state)
     isnothing(state) && return nothing
 
     mystart = state.laststop + 1

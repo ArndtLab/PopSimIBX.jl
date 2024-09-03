@@ -11,20 +11,20 @@ using ..Populations
 
 
 
-mutable struct IBDIterrator <: AbstractSegmentalsIterator
+mutable struct IBDIterator <: AbstractSegmentalsIterator
     anc::StationaryPopulation
     tau_recombination::Int
 end
 
-IBDIterrator(anc::StationaryPopulation) = IBDIterrator(anc, 1)
+IBDIterator(anc::StationaryPopulation) = IBDIterator(anc, 1)
 
 
-Base.IteratorSize(::Type{IBDIterrator}) = Base.SizeUnknown()
-Base.IteratorEltype(::Type{IBDIterrator}) = Base.HasEltype()
-Base.eltype(::Type{IBDIterrator}) = Segmentals.Segmental{CoalescentTrees.SimpleCoalescentTree{Int64}}
+Base.IteratorSize(::Type{IBDIterator}) = Base.SizeUnknown()
+Base.IteratorEltype(::Type{IBDIterator}) = Base.HasEltype()
+Base.eltype(::Type{IBDIterator}) = Segmentals.Segmental{CoalescentTrees.SimpleCoalescentTree{Int64}}
 
 
-function Base.iterate(ti::IBDIterrator, pos = 1)
+function Base.iterate(ti::IBDIterator, pos = 1)
     if pos > ti.anc.genome_length
         return nothing
     end
@@ -56,23 +56,23 @@ using ..Segmentals
 using ..Populations
 
 
-mutable struct IBDIterrator{T} <: AbstractSegmentalsIterator
+mutable struct IBDIterator{T} <: AbstractSegmentalsIterator
     anc::T
     tau_recombination::Int
     tau_previous::Int
 end
 
-IBDIterrator(anc::StationaryPopulation) = IBDIterrator(anc, 1, 1)
-IBDIterrator(anc::VaryingPopulation) = IBDIterrator(anc, 1, 1)
+IBDIterator(anc::StationaryPopulation) = IBDIterator(anc, 1, 1)
+IBDIterator(anc::VaryingPopulation) = IBDIterator(anc, 1, 1)
 
 
-Base.IteratorSize(::Type{IBDIterrator{T}}) where T = Base.SizeUnknown()
-Base.IteratorEltype(::Type{IBDIterrator{T}}) where T = Base.HasEltype()
-Base.eltype(::Type{IBDIterrator{T}}) where {T} = Segmentals.Segmental{CoalescentTrees.SimpleCoalescentTree{Int64}}
+Base.IteratorSize(::Type{IBDIterator{T}}) where T = Base.SizeUnknown()
+Base.IteratorEltype(::Type{IBDIterator{T}}) where T = Base.HasEltype()
+Base.eltype(::Type{IBDIterator{T}}) where {T} = Segmentals.Segmental{CoalescentTrees.SimpleCoalescentTree{Int64}}
 
 
 
-function Base.iterate(ti::IBDIterrator{StationaryPopulation}, pos = 1)
+function Base.iterate(ti::IBDIterator{StationaryPopulation}, pos = 1)
     if pos > ti.anc.genome_length
         return nothing
     end
@@ -100,7 +100,7 @@ end
 
 
 
-function Base.iterate(ti::IBDIterrator{VaryingPopulation}, pos = 1)
+function Base.iterate(ti::IBDIterator{VaryingPopulation}, pos = 1)
     if pos > ti.anc.genome_length
         return nothing
     end

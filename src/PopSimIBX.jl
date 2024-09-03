@@ -8,7 +8,7 @@ export StationaryPopulation, VaryingPopulation
 export SMC, SMCprime
 
 
-export IBAIterrator, IBSIterrator, AbstractSegmentalsIterator
+export IBAIterator, IBSIterator, AbstractSegmentalsIterator
 # export Segmentals
 export segment_length, time_span
 export append!
@@ -26,7 +26,7 @@ include("SMCiterators.jl")
 
 
 include("Iterators.jl")
-using .Iterators   # This is necessary to get IBAIterrator into the namespace
+using .Iterators   # This is necessary to get IBAIterator into the namespace
 
 include("utils.jl")
 

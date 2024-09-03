@@ -19,7 +19,7 @@ iscoalescent(ct::SimpleCoalescentTree{T}) where {T} = true
 """
     CoalescentTree{T}
 
-A coalescent tree. Object of this type are returned by the IBDTreeIterrator.
+A coalescent tree. Object of this type are returned by the IBDTreeIterator.
 """
 struct CoalescentTree{T} <: AbstractCoalescentTree
     ids::Vector{Int64}

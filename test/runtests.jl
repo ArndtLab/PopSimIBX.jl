@@ -34,9 +34,9 @@ end
 
         pop = StationaryPopulation(;genome_length, mutation_rate)
 
-        ibds = collect(SMC.IBDIterrator(pop))
-        ibas = collect(IBAIterrator(ibds))
-        ibss = collect(IBSIterrator(ibds, pop.mutation_rate))
+        ibds = collect(SMC.IBDIterator(pop))
+        ibas = collect(IBAIterator(ibds))
+        ibss = collect(IBSIterator(ibds, pop.mutation_rate))
 
         # @show length(ibds), length(ibas), length(ibss)
 
@@ -44,10 +44,10 @@ end
         @test genome_length == sum(segment_length, ibas)
         @test genome_length == sum(segment_length, ibss)
 
-        @test genome_length == mapreduce(segment_length, +, SMC.IBDIterrator(pop))
-        @test genome_length == mapreduce(segment_length, +, IBAIterrator(ibds))
-        @test genome_length == mapreduce(segment_length, +, IBAIterrator(SMC.IBDIterrator(pop)))
-        @test genome_length == mapreduce(segment_length, +, IBSIterrator(SMC.IBDIterrator(pop), pop.mutation_rate))
+        @test genome_length == mapreduce(segment_length, +, SMC.IBDIterator(pop))
+        @test genome_length == mapreduce(segment_length, +, IBAIterator(ibds))
+        @test genome_length == mapreduce(segment_length, +, IBAIterator(SMC.IBDIterator(pop)))
+        @test genome_length == mapreduce(segment_length, +, IBSIterator(SMC.IBDIterator(pop), pop.mutation_rate))
     end
 
 end
@@ -63,9 +63,9 @@ end
         pop = StationaryPopulation(;genome_length, mutation_rate, population_size)
 
         
-        ibds = collect(SMCprime.IBDIterrator(pop))
-        ibas = collect(IBAIterrator(ibds))
-        ibss = collect(IBSIterrator(ibds, pop.mutation_rate))
+        ibds = collect(SMCprime.IBDIterator(pop))
+        ibas = collect(IBAIterator(ibds))
+        ibss = collect(IBSIterator(ibds, pop.mutation_rate))
 
         # @show length(ibds), length(ibas), length(ibss)
         
@@ -78,10 +78,10 @@ end
         @test genome_length == sum(segment_length, ibas)
         @test genome_length == sum(segment_length, ibss)
 
-        @test genome_length == mapreduce(segment_length, +, SMCprime.IBDIterrator(pop))
-        @test genome_length == mapreduce(segment_length, +, IBAIterrator(ibds))
-        @test genome_length == mapreduce(segment_length, +, IBAIterrator(SMCprime.IBDIterrator(pop)))
-        @test genome_length == mapreduce(segment_length, +, IBSIterrator(SMCprime.IBDIterrator(pop), pop.mutation_rate))
+        @test genome_length == mapreduce(segment_length, +, SMCprime.IBDIterator(pop))
+        @test genome_length == mapreduce(segment_length, +, IBAIterator(ibds))
+        @test genome_length == mapreduce(segment_length, +, IBAIterator(SMCprime.IBDIterator(pop)))
+        @test genome_length == mapreduce(segment_length, +, IBSIterator(SMCprime.IBDIterator(pop), pop.mutation_rate))
 
         rtotal = mapreduce(+, ibss) do x
             PopSimIBX.Segmentals.data(x)
@@ -99,7 +99,7 @@ end
         rep = 1:10
 
         pop = StationaryPopulation(;genome_length)
-        ibds = collect(SMCprime.IBDIterrator(pop))
+        ibds = collect(SMCprime.IBDIterator(pop))
         
         meantau1 = mapreduce(+, ibds) do x
             time_span(PopSimIBX.Segmentals.data(x))
@@ -109,7 +109,7 @@ end
         Ns = fill(pop.population_size, nepochs)
         Ts = [i * meantau1 for i in 0:nepochs-1]
         pop = VaryingPopulation(;genome_length, population_sizes = Ns, times = Ts)
-        ibds = collect(SMCprime.IBDIterrator(pop))
+        ibds = collect(SMCprime.IBDIterator(pop))
         @test length(ibds) > 1000
 
         meantau2 = mapreduce(+, ibds) do x
@@ -124,23 +124,23 @@ end
     pop = StationaryPopulation(;genome_length = 1_000_000_000)
     
     h = Histogram(1:1000:1_000_001)
-    si = SMCprime.IBDIterrator(pop)
+    si = SMCprime.IBDIterator(pop)
     append!(h, si)
     @test sum(h.weights) > 0
 
     h = Histogram(1:1000:1_000_001)
-    si = IBAIterrator(SMCprime.IBDIterrator(pop))
+    si = IBAIterator(SMCprime.IBDIterator(pop))
     append!(h, si)
     @test sum(h.weights) > 0
 
     h = Histogram(1:1000:1_000_001)
-    si = IBSIterrator(SMCprime.IBDIterrator(pop), pop.mutation_rate)
+    si = IBSIterator(SMCprime.IBDIterator(pop), pop.mutation_rate)
     append!(h, si)
     @test sum(h.weights) > 0
 
     for i in 1:100
         local h = Histogram(1:1000:1_000_001)
-        local si = collect(SMCprime.IBDIterrator(pop))
+        local si = collect(SMCprime.IBDIterator(pop))
         append!(h, si)
         @test sum(x->segment_length(x), si) == pop.genome_length
         toolo = sum(x -> segment_length(x)==0, si)

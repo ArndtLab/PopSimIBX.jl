@@ -69,10 +69,12 @@ function break_segment(L::Int64, prob::Float64, allow_multiple_hits = true)
     n_breaks = rand(Poisson(L * prob))
     n_breaks == 0 && return Int64[]
     if allow_multiple_hits
-        return unique(sort(rand(1:L, n_breaks)))
+        r = rand(1:L, n_breaks)
+        return unique!(sort!(r))
     else
         n_breaks >=L && return collect(1:L)
-        return sort(sample(1:L, n_breaks, replace = false))
+        r = sample(1:L, n_breaks, replace = false)
+        return sort!(r)
     end
 end
 

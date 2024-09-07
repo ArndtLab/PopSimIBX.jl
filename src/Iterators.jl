@@ -62,27 +62,10 @@ end
 # -----------------------------------------------------------------------------
 
 
-function break_segment(L::Int64, prob::Float64, allow_multiple_hits = true)
-    if prob == Inf
-        return collect(1:L)
-    end
-    n_breaks = rand(Poisson(L * prob))
-    n_breaks == 0 && return Int64[]
-    if allow_multiple_hits
-        return unique(sort(rand(1:L, n_breaks)))
-    else
-        n_breaks >=L && return collect(1:L)
-        return sort(sample(1:L, n_breaks, replace = false))
-    end
-end
-
-
 
 
 mutable struct IBSIterator{T} <: AbstractSegmentalsIterator
     ibxs::T
-    breaks::Vector{Int64}
-    lastibxstop::Int64
     mutation_rate::Float64
 end
 
@@ -96,8 +79,9 @@ Base.eltype(::Type{IBSIterator{T}}) where {T} = Segmentals.Segmental{Int64}
 
 mutable struct IBSIteratorState{T}
     ibxstate::Union{Nothing, T}
+    lastibxstop::Int64
+    lastibxdt::Real
     laststop::Int64
-    b::Int64
 end
 
 
@@ -109,57 +93,58 @@ function Base.iterate(si::IBSIterator)
     seg = ibx[1]
 
     dt = time_span(data(seg))
-    si.breaks = (start(seg) - 1) .+ break_segment(segment_length(seg), 2 * si.mutation_rate * dt)
-    si.lastibxstop = stop(seg)
-    state = IBSIteratorState(ibx[2], 0, 1)
+    state = IBSIteratorState(ibx[2], stop(seg), dt,  0)
     iterate(si, state)
 end
+
+
+function randnextstop(start, p)
+    if p < 1
+        return start + rand(Geometric(p)) 
+    else 
+        return start 
+    end
+end
+
 
 
 function Base.iterate(si::IBSIterator, state)
     isnothing(state) && return nothing
 
     mystart = state.laststop + 1
-    # @show mystart, state.b, si.breaks
+    nextstop = randnextstop(mystart, 2 * si.mutation_rate * state.lastibxdt) # first break
 
-    if state.b <= length(si.breaks)
-        mystop = si.breaks[state.b]
-        state.b += 1
+
+    if nextstop <= state.lastibxstop
+        mystop = nextstop
         state.laststop = mystop
-        return Segmental(mystart, mystop, 0), state
+        return Segmental(mystart, mystop, 0), state  # 0 recombination events in between mutations
     else
         r = 0
         while true
             ibx = iterate(si.ibxs, state.ibxstate)
             if isnothing(ibx) # last ibd reached, emit last interval
-                return Segmental(mystart, si.lastibxstop, r), nothing
+                return Segmental(mystart, state.lastibxstop, r), nothing
             end
-
-            state.ibxstate = ibx[2]
-            seg = ibx[1]
             r += 1
-            # println("seg: ", seg)
 
-            dt = time_span(data(seg))
-            si.breaks = (start(seg) - 1) .+ break_segment(segment_length(seg), 2 * si.mutation_rate * dt)
-            si.lastibxstop = stop(seg)
-
-            if isempty(si.breaks) # no breaks in ibx
+            seg = ibx[1]
+            state.ibxstate = ibx[2]
+            state.lastibxstop = stop(seg)
+            state.lastibxdt = time_span(data(seg))
+            nextstop = randnextstop(start(seg) - 1, 2 * si.mutation_rate * state.lastibxdt) 
+            
+            if nextstop > state.lastibxstop
                 continue
             end
 
-            # @show si.breaks
-            mystop = si.breaks[1]
-            state.b = 2
+            mystop = nextstop
             state.laststop = mystop 
 
             return Segmental(mystart, mystop, r), state
         end
     end
 end
-
-
-
 
 
 

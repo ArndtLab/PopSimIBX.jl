@@ -1,7 +1,6 @@
-
 module Populations
 
-export StationaryPopulation, VaryingPopulation
+export StationaryPopulation, VaryingPopulation, genome_length
 
 struct StationaryPopulation
     ploidy::Int
@@ -11,14 +10,17 @@ struct StationaryPopulation
     population_size::Int
 end
 
-function StationaryPopulation(; 
-        ploidy = 2, 
-        population_size = 1_000, 
-        genome_length = 1_000_000, 
-        recombination_rate = 1e-8, 
-        mutation_rate = 1e-8)
-    StationaryPopulation(ploidy, genome_length, recombination_rate, mutation_rate, population_size)    
+function StationaryPopulation(;
+        ploidy = 2,
+        population_size = 1_000,
+        genome_length = 1_000_000,
+        recombination_rate = 1.0e-8,
+        mutation_rate = 1.0e-8
+    )
+    StationaryPopulation(ploidy, genome_length, recombination_rate, mutation_rate, population_size)
 end
+
+genome_length(pop::StationaryPopulation) = pop.genome_length
 
 
 struct VaryingPopulation
@@ -32,13 +34,14 @@ struct VaryingPopulation
 end
 
 
-function VaryingPopulation(; 
-        ploidy = 2, 
-        population_sizes = [1_000], 
-        times = [0.0], 
-        genome_length = 1_000_000, 
-        recombination_rate = 1e-8, 
-        mutation_rate = 1e-8)
+function VaryingPopulation(;
+        ploidy = 2,
+        population_sizes = [1_000],
+        times = [0.0],
+        genome_length = 1_000_000,
+        recombination_rate = 1.0e-8,
+        mutation_rate = 1.0e-8
+    )
     if length(population_sizes) != length(times)
         throw(ArgumentError("population_sizes and times must have the same length"))
     end
@@ -50,5 +53,7 @@ function VaryingPopulation(;
     end
     VaryingPopulation(ploidy, genome_length, recombination_rate, mutation_rate, population_sizes, times)
 end
+
+genome_length(pop::VaryingPopulation) = pop.genome_length
 
 end    # module Populations

@@ -2,7 +2,7 @@ module Iterators
 
 
 
-export IBAIterator, IBSIterator
+export IBAIterator, IBSIterator, MaxLenIterator
 
 using ..Segmentals
 using ..CoalescentTrees
@@ -160,6 +160,36 @@ function Base.iterate(si::IBSIterator, state)
     end
 end
 
+
+mutable struct MaxLenIterator{T}
+    iter::T
+    max::Int
+    func
+end
+
+MaxLenIterator(iter, maxlen) = MaxLenIterator(iter, maxlen, segment_length)
+
+Base.IteratorSize(::Type{MaxLenIterator{T}}) where T = Base.SizeUnknown()
+Base.IteratorEltype(::Type{MaxLenIterator{T}}) where T = Base.HasEltype()
+Base.eltype(::Type{MaxLenIterator{T}}) where {T} = Base.eltype(T)
+
+
+function Base.iterate(iter::MaxLenIterator{T}, state=(iter.max,))  where {T}
+    n, rest =state[1], state[2:end]
+    if n <= 0
+        return nothing
+    end
+    r = iterate(iter.iter, rest...)
+    if r === nothing
+        return nothing
+    end
+    val = iter.func(r[1])
+    if n - val < 0
+        ret = eltype(T)(r[1].start, r[1].start + n - 1, r[1].data)
+        return ret, (0, r[2])
+    end
+    return r[1], (n-val, r[2])
+end
 
 
 

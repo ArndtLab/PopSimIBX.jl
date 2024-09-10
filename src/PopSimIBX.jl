@@ -1,6 +1,6 @@
 module PopSimIBX
 
-import StatsBase: AbstractHistogram
+import StatsBase: AbstractHistogram, Histogram
 
 export Populations
 export StationaryPopulation, VaryingPopulation
@@ -11,7 +11,7 @@ export SMC, SMCprime
 export IBAIterator, IBSIterator, AbstractSegmentalsIterator
 # export Segmentals
 export segment_length, time_span
-export append!
+export append!, multi_threaded_append!
 
 
 include("Populations.jl")

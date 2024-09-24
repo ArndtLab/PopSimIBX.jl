@@ -2,10 +2,8 @@ module SMC
 
 
 using Distributions
+using PopSimBase
 
-using ..CoalescentTrees
-using ..Segmentals
-using ..Populations
 
 
 mutable struct IBDIterator <: AbstractSegmentalsIterator
@@ -18,7 +16,7 @@ IBDIterator(anc::StationaryPopulation) = IBDIterator(anc, 1)
 
 Base.IteratorSize(::Type{IBDIterator}) = Base.SizeUnknown()
 Base.IteratorEltype(::Type{IBDIterator}) = Base.HasEltype()
-Base.eltype(::Type{IBDIterator}) = Segmentals.Segmental{CoalescentTrees.SimpleCoalescentTree{Int64}}
+Base.eltype(::Type{IBDIterator}) = Segmentals.Segmental{Nothing,CoalescentTrees.SimpleCoalescentTree{Int64}}
 
 
 function Base.iterate(ti::IBDIterator, pos = 1)
@@ -30,7 +28,7 @@ function Base.iterate(ti::IBDIterator, pos = 1)
     ti.tau_recombination = rand(DiscreteUniform(1, tau))
     len = rand(Geometric(2 * ti.anc.recombination_rate * tau))
 
-    tree = SimpleCoalescentTree(tau) # for two individuals no actual tree is returned
+    tree = CoalescentTrees.SimpleCoalescentTree(tau) # for two individuals no actual tree is returned
 
     stop = min(pos + len - 1, ti.anc.genome_length)
     return Segmental(pos, stop, tree), stop + 1
@@ -44,11 +42,7 @@ module SMCprime
 
 
 using Distributions
-
-using ..CoalescentTrees
-using ..Segmentals
-using ..Populations
-
+using PopSimBase
 
 mutable struct IBDIterator{T} <: AbstractSegmentalsIterator
     anc::T
@@ -63,7 +57,7 @@ IBDIterator(anc::VaryingPopulation, max_length = genome_length(anc)) = IBDIterat
 
 Base.IteratorSize(::Type{IBDIterator{T}}) where {T} = Base.SizeUnknown()
 Base.IteratorEltype(::Type{IBDIterator{T}}) where {T} = Base.HasEltype()
-Base.eltype(::Type{IBDIterator{T}}) where {T} = Segmentals.Segmental{CoalescentTrees.SimpleCoalescentTree{Int64}}
+Base.eltype(::Type{IBDIterator{T}}) where {T} = Segmentals.Segmental{Nothing, CoalescentTrees.SimpleCoalescentTree{Int64}}
 
 
 function Base.iterate(ti::IBDIterator{StationaryPopulation}, pos = 1)
@@ -86,7 +80,7 @@ function Base.iterate(ti::IBDIterator{StationaryPopulation}, pos = 1)
     ti.tau_recombination = rand(DiscreteUniform(1, tau))
     len = rand(Geometric(2 * ti.anc.recombination_rate * tau))
 
-    tree = SimpleCoalescentTree(tau) # for two individuals no actual tree is returned
+    tree = CoalescentTrees.SimpleCoalescentTree(tau) # for two individuals no actual tree is returned
 
     stop = min(pos + len - 1, ti.max_length)
     return Segmental(pos, stop, tree), stop + 1
@@ -127,7 +121,7 @@ function Base.iterate(ti::IBDIterator{VaryingPopulation}, pos = 1)
     len = rand(Geometric(2 * ti.anc.recombination_rate * tau))
 
 
-    tree = SimpleCoalescentTree(ti.tau_previous) # for two individuals no actual tree is returned
+    tree = CoalescentTrees.SimpleCoalescentTree(ti.tau_previous) # for two individuals no actual tree is returned
 
     stop = min(pos + len - 1, ti.max_length)
     return Segmental(pos, stop, tree), stop + 1

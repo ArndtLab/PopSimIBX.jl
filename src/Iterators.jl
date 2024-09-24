@@ -2,10 +2,9 @@ module Iterators
 
 
 
-export IBAIterator, IBSIterator, MaxLenIterator
+export IBAIterator, IBSIterator
 
-using ..Segmentals
-using ..CoalescentTrees
+using PopSimBase
 using Distributions
 
 
@@ -20,7 +19,7 @@ end
 Base.IteratorSize(::Type{IBAIterator{T}}) where {T} = Base.SizeUnknown()
 Base.IteratorEltype(::Type{IBAIterator{T}}) where {T} = Base.HasEltype()
 Base.eltype(::Type{IBAIterator{T}}) where {T} =
-    Segmentals.Segmental{CoalescentTrees.SimpleCoalescentTree{Int64}}
+    Segmentals.Segmental{Nothing,CoalescentTrees.SimpleCoalescentTree{Int64}}
 
 function Base.iterate(ai::IBAIterator{T}) where {T}
     f = iterate(ai.ibds)
@@ -94,7 +93,7 @@ IBSIterator(ibx, mutation_rate) = IBSIterator(ibx, Int[], 0, mutation_rate)
 
 Base.IteratorSize(::Type{IBSIterator{T}}) where {T} = Base.SizeUnknown()
 Base.IteratorEltype(::Type{IBSIterator{T}}) where {T} = Base.HasEltype()
-Base.eltype(::Type{IBSIterator{T}}) where {T} = Segmentals.Segmental{Int64}
+Base.eltype(::Type{IBSIterator{T}}) where {T} = Segmentals.Segmental{Nothing,Int64}
 
 
 mutable struct IBSIteratorState{T}
@@ -111,7 +110,7 @@ function Base.iterate(si::IBSIterator)
 
     seg = ibx[1]
 
-    dt = time_span(data(seg))
+    dt = CoalescentTrees.time_span(data(seg))
     si.breaks =
         (start(seg) - 1) .+ break_segment(segment_length(seg), 2 * si.mutation_rate * dt)
     si.lastibxstop = stop(seg)
@@ -144,7 +143,7 @@ function Base.iterate(si::IBSIterator, state)
             r += 1
             # println("seg: ", seg)
 
-            dt = time_span(data(seg))
+            dt = CoalescentTrees.time_span(data(seg))
             si.breaks =
                 (start(seg) - 1) .+
                 break_segment(segment_length(seg), 2 * si.mutation_rate * dt)
@@ -164,36 +163,6 @@ function Base.iterate(si::IBSIterator, state)
     end
 end
 
-
-mutable struct MaxLenIterator{T}
-    iter::T
-    max::Int
-    func
-end
-
-MaxLenIterator(iter, maxlen) = MaxLenIterator(iter, maxlen, segment_length)
-
-Base.IteratorSize(::Type{MaxLenIterator{T}}) where {T} = Base.SizeUnknown()
-Base.IteratorEltype(::Type{MaxLenIterator{T}}) where {T} = Base.HasEltype()
-Base.eltype(::Type{MaxLenIterator{T}}) where {T} = Base.eltype(T)
-
-
-function Base.iterate(iter::MaxLenIterator{T}, state = (iter.max,)) where {T}
-    n, rest = state[1], state[2:end]
-    if n <= 0
-        return nothing
-    end
-    r = iterate(iter.iter, rest...)
-    if r === nothing
-        return nothing
-    end
-    val = iter.func(r[1])
-    if n - val < 0
-        ret = eltype(T)(r[1].start, r[1].start + n - 1, r[1].data)
-        return ret, (0, r[2])
-    end
-    return r[1], (n - val, r[2])
-end
 
 
 

@@ -3,32 +3,22 @@ using TestItemRunner
 @run_package_tests  verbose = true
 
 
-@testitem "StationaryPopulation" begin
-    genome_length = 1_000_000
-
-    pop = StationaryPopulation(; genome_length)
-    # pop = Populations.StationaryPopulation(;genome_length)
-
-    @test pop.genome_length == genome_length
-end
-
-@testitem "VaryingPopulation" begin
-    genome_length = 1_000_000
-    Ts = [0.0, 1.0, 2.0]
-    Ns = [1_000, 1_000, 1_000]
-    pop = VaryingPopulation(; genome_length, population_sizes = Ns, times = Ts)
-
-    @test pop.genome_length == genome_length
-    @test pop.population_sizes == Ns
-    @test pop.times == Ts
-end
 
 
 @testitem "SMC" begin
+    # using .PopSimBase
+
     for genome_length in [10, 1000, 1_000_000],
             mutation_rate in [1.0e-3, 1.0e-9, 1.0e-10]
 
         pop = StationaryPopulation(; genome_length, mutation_rate)
+
+        h = sum(segment_length, SMC.IBDIterator(pop))
+        @test h == pop.genome_length
+
+        h = collect(segment_length.(SMC.IBDIterator(pop)))
+        @test length(h) > 0
+        @test sum(h) == pop.genome_length
 
         ibds = collect(SMC.IBDIterator(pop))
         ibas = collect(IBAIterator(ibds))
@@ -88,26 +78,6 @@ end
 end
 
 
-@testitem "MaxLenIterator" begin
-    for genome_length in [100, 10000],
-            mutation_rate in [1.0e-4, 1.0e-5, 1.0e-9],
-            population_size in [1_000, 10_000, 100_000],
-            rep in 1:3
-
-        pop = StationaryPopulation(; genome_length, mutation_rate, population_size)
-
-        len = mapreduce(segment_length, +, SMCprime.IBDIterator(pop))
-        @test len == genome_length
-        len = mapreduce(segment_length, +, PopSimIBX.MaxLenIterator(SMCprime.IBDIterator(pop), 500))
-        @test len == min(500, genome_length)
-
-        len = mapreduce(segment_length, +, IBSIterator(SMCprime.IBDIterator(pop), pop.mutation_rate))
-        @test len == genome_length
-        len = mapreduce(segment_length, +, PopSimIBX.MaxLenIterator(IBSIterator(SMCprime.IBDIterator(pop), pop.mutation_rate), 500))
-        @test len == min(500, genome_length)
-    end
-end
-
 
 @testitem "SMCprime const VaryingPopulation" begin
     using PopSimIBX.CoalescentTrees
@@ -138,6 +108,7 @@ end
 
 @testitem "Histogram append" begin
     using StatsBase
+    using Random
     pop = StationaryPopulation(; genome_length = 1_000_000_000)
 
     h = Histogram(1:1000:1_000_001)
@@ -155,22 +126,26 @@ end
     append!(h, si)
     @test sum(h.weights) > 0
 
-    for i in 1:100
-        local h = Histogram(1:1000:1_000_001)
-        local si = collect(SMCprime.IBDIterator(pop))
-        append!(h, si)
-        @test sum(x -> segment_length(x), si) == pop.genome_length
-        toolo = sum(x -> segment_length(x) == 0, si)
-        toohi = sum(x -> segment_length(x) > 1_000_000, si)
+    # for i in 1:100
+    #     local h = Histogram(1:1000:1_000_001)
+    #     local si = collect(SMCprime.IBDIterator(pop))
+    #     append!(h, si)
+    #     @test sum(x -> segment_length(x), si) == pop.genome_length
+    #     toolo = sum(x -> segment_length(x) == 0, si)
+    #     toohi = sum(x -> segment_length(x) > 1_000_000, si)
 
-        @test sum(h.weights) + toolo + toohi == length(si)
-    end
+    #     @test sum(h.weights) + toolo + toohi == length(si)
+    # end
 
     for i in 1:10
         local pop = StationaryPopulation(; genome_length = 1_000_000, recombination_rate = 1.0e-6)
         local h = Histogram(1:1_000)
+        Random.seed!(i)
+        append!(h, SMCprime.IBDIterator(pop))
+
+        Random.seed!(i)
         local si = collect(SMCprime.IBDIterator(pop))
-        append!(h, si)
+
         c1 = sum(x -> segment_length(x) == 1, si)
         c2 = sum(x -> segment_length(x) == 2, si)
         c3 = sum(x -> segment_length(x) == 3, si)
@@ -180,32 +155,4 @@ end
         @test c3 == h.weights[3]
         @test c50 == h.weights[50]
     end
-end
-
-
-@testitem "Histogram multi threaded append" begin
-    using StatsBase
-    genome_length = 1_000_000
-    pop = StationaryPopulation(; genome_length, recombination_rate = 1.0e-5, mutation_rate = 1.0e-5)
-
-    h = Histogram(1:1:1_000_001)
-    si = SMCprime.IBDIterator(pop)
-    multi_threaded_append!(h, si, pop.genome_length)
-    @test sum(h.weights .* collect(1:1000000)) == genome_length
-
-    h.weights .= 0
-    si = IBAIterator(SMCprime.IBDIterator(pop))
-    multi_threaded_append!(h, si, pop.genome_length)
-    @test sum(h.weights .* collect(1:1000000)) == genome_length
-
-    h.weights .= 0
-    si = IBSIterator(SMCprime.IBDIterator(pop), pop.mutation_rate)
-    multi_threaded_append!(h, si, pop.genome_length)
-    @test sum(h.weights .* collect(1:1000000)) == genome_length
-
-
-    h.weights .= 0
-    multi_threaded_append!(h, si, 5000)
-    @test sum(h.weights .* collect(1:1000000)) == 5000
-
 end

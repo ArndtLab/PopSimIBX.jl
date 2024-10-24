@@ -26,7 +26,12 @@ function Base.iterate(ti::IBDIterator, pos = 1)
 
     tau = rand(Geometric(1 / (2 * ti.anc.population_size))) + ti.tau_recombination
     ti.tau_recombination = rand(DiscreteUniform(1, tau))
-    len = rand(Geometric(2 * ti.anc.recombination_rate * tau))
+    recombination_rate_bp = 2 * ti.anc.recombination_rate * tau
+    if recombination_rate_bp < 1
+        len = rand(Geometric(recombination_rate_bp))
+    else
+        len = 1
+    end
 
     tree = CoalescentTrees.SimpleCoalescentTree(tau) # for two individuals no actual tree is returned
 
@@ -78,7 +83,12 @@ function Base.iterate(ti::IBDIterator{StationaryPopulation}, pos = 1)
     end
     ti.tau_previous = tau
     ti.tau_recombination = rand(DiscreteUniform(1, tau))
-    len = rand(Geometric(2 * ti.anc.recombination_rate * tau))
+    recombination_rate_bp = 2 * ti.anc.recombination_rate * tau
+    if recombination_rate_bp < 1
+        len = rand(Geometric(recombination_rate_bp))
+    else
+        len = 1
+    end
 
     tree = CoalescentTrees.SimpleCoalescentTree(tau) # for two individuals no actual tree is returned
 
@@ -118,8 +128,12 @@ function Base.iterate(ti::IBDIterator{VaryingPopulation}, pos = 1)
     end
     ti.tau_previous = ceil(Int, tau)
     ti.tau_recombination = rand(DiscreteUniform(1, ti.tau_previous))
-    len = rand(Geometric(2 * ti.anc.recombination_rate * tau))
-
+    recombination_rate_bp = 2 * ti.anc.recombination_rate * tau
+    if recombination_rate_bp < 1
+        len = rand(Geometric(recombination_rate_bp))
+    else
+        len = 1
+    end
 
     tree = CoalescentTrees.SimpleCoalescentTree(ti.tau_previous) # for two individuals no actual tree is returned
 

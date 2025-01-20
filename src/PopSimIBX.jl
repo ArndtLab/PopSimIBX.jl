@@ -12,7 +12,7 @@ export StationaryPopulation, VaryingPopulation
 export SMC, SMCprime
 
 
-export IBAIterator, IBSIterator, AbstractSegmentalsIterator
+export IBAIterator, IBSIterator, IBMIterator, IBSIteratorMutated, AbstractSegmentalsIterator
 export segment_length, time_span
 export append!
 

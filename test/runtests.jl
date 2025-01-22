@@ -6,7 +6,7 @@ using TestItemRunner
 
 
 @testitem "SMC" begin
-    # using .PopSimBase
+    using .PopSimBase
 
     for genome_length in [10, 1000, 1_000_000],
             mutation_rate in [1.0e-3, 1.0e-9, 1.0e-10]
@@ -23,17 +23,25 @@ using TestItemRunner
         ibds = collect(SMC.IBDIterator(pop))
         ibas = collect(IBAIterator(ibds))
         ibss = collect(IBSIterator(ibds, pop.mutation_rate))
+        ibms = collect(IBMIterator(ibds, pop.mutation_rate))
+        ibmss = collect(IBSIterator(ibms))
+        ibmss2= collect(IBSIterator(ibms))
+        @test ibmss == ibmss2
 
         # @show length(ibds), length(ibas), length(ibss)
 
         @test genome_length == sum(segment_length, ibds)
         @test genome_length == sum(segment_length, ibas)
         @test genome_length == sum(segment_length, ibss)
+        @test genome_length == sum(segment_length, ibms)
+        @test genome_length == sum(segment_length, ibmss)
 
         @test genome_length == mapreduce(segment_length, +, SMC.IBDIterator(pop))
         @test genome_length == mapreduce(segment_length, +, IBAIterator(ibds))
         @test genome_length == mapreduce(segment_length, +, IBAIterator(SMC.IBDIterator(pop)))
         @test genome_length == mapreduce(segment_length, +, IBSIterator(SMC.IBDIterator(pop), pop.mutation_rate))
+        @test genome_length == mapreduce(segment_length, +, IBMIterator(SMC.IBDIterator(pop), pop.mutation_rate))
+        @test genome_length == mapreduce(segment_length, +, IBSIterator(IBMIterator(SMC.IBDIterator(pop), pop.mutation_rate)))
     end
 
 end
@@ -56,7 +64,7 @@ end
         # @show length(ibds), length(ibas), length(ibss)
 
         meantau = mapreduce(+, ibds) do x
-            time_span(PopSimIBX.Segmentals.data(x))
+            time_span(PopSimIBX.Segments.data(x))
         end / length(ibds)
         # @show meantau
 
@@ -70,7 +78,7 @@ end
         @test genome_length == mapreduce(segment_length, +, IBSIterator(SMCprime.IBDIterator(pop), pop.mutation_rate))
 
         rtotal = mapreduce(+, ibss) do x
-            PopSimIBX.Segmentals.data(x)
+            PopSimIBX.Segments.data(x)
         end
         @test rtotal + 1 == length(ibds)
 
@@ -89,7 +97,7 @@ end
         ibds = collect(SMCprime.IBDIterator(pop))
 
         meantau1 = mapreduce(+, ibds) do x
-            time_span(PopSimIBX.Segmentals.data(x))
+            time_span(PopSimIBX.Segments.data(x))
         end / length(ibds)
 
         nepochs = 5
@@ -100,7 +108,7 @@ end
         @test length(ibds) > 1000
 
         meantau2 = mapreduce(+, ibds) do x
-            time_span(PopSimIBX.Segmentals.data(x))
+            time_span(PopSimIBX.Segments.data(x))
         end / length(ibds)
         @test abs(meantau1 - meantau2) / meantau1 < 0.05
     end

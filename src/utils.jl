@@ -1,6 +1,6 @@
 function Base.append!(
         h::AbstractHistogram{T, 1},
-        si::AbstractSegmentalsIterator,
+        si::AbstractSegmentsIterator,
         func = segment_length
     ) where {T}
 

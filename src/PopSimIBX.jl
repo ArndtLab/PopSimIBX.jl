@@ -26,6 +26,7 @@ export append!
 
 
 include("SMCiterators.jl")
+include("Hudson.jl")
 
 include("Iterators.jl")
 using .Iterators   # This is necessary to get IBAIterator into the namespace

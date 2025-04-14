@@ -70,8 +70,8 @@ function coalesce(
         tau::F) where {T <: Integer, F <: Real}
 
 
-    length(v1) == 0 && return (v2, vc)
-    length(v2) == 0 && return (v1, vc)
+    length(v1) == 0 && return v2
+    length(v2) == 0 && return v1
     
     v = Vector{Segment{T}}()
 

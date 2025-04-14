@@ -9,7 +9,7 @@ import StatsBase: AbstractHistogram, Histogram
 export Populations
 export StationaryPopulation, VaryingPopulation
 
-export SMC, SMCprime
+export SMC, SMCprime, Hudson
 
 
 export IBAIterator, IBMIterator, IBSIterator, AbstractSegmentsIterator

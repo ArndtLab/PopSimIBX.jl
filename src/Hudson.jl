@@ -69,6 +69,22 @@ function distribute(vi::Vector{Segment{T}}, bps::Vector{T}) where {T <: Integer}
     v1, v2
 end
 
+function distribute(vi::Vector{Segment{T}}, rate::Float64) where {T <: Integer}
+    length(vi) == 0 && return (Vector{Segment{T}}(), Vector{Segment{T}}())
+
+    posmin = vi[1].start
+    posmax = vi[end].stop + 1
+
+
+    n_breaks = rand(Poisson(rate * (posmax - posmin)))
+    n_breaks == 0 && return (vi, Vector{Segment{T}}())
+    bps = rand(posmin:(posmax-1), n_breaks)
+    sort!(bps)
+
+    distribute(vi, bps)
+end
+
+
 function coalesce(
         v1::Vector{Segment{T}}, 
         v2::Vector{Segment{T}}, 
@@ -162,10 +178,7 @@ function IBDIterator(anc::StationaryPopulation)
         empty!(v2)
 
         for vi in v1
-            n_breaks = rand(Poisson(L * anc.recombination_rate))
-            bps = rand(1:L, n_breaks)
-            sort!(bps)
-            vi1, vi2 = distribute(vi, bps)
+            vi1, vi2 = distribute(vi, anc.recombination_rate)
 
             if !isempty(vi1)
                 k = rand(1: 2 * N)

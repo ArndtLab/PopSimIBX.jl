@@ -3,14 +3,22 @@ module Hudson
 using PopSimBase
 using Distributions
 
-function nextinterval(vis::Iterators.Stateful, posmax::T) where {T <: Integer}
-    if isempty(vis)
-        return posmax, posmax
-    end
-    i = popfirst!(vis)
-    return start(i), stop(i)
+
+mutable struct VI_Iterator{T}
+    v::T
+    k::Int
+    default::Int
 end
 
+VI_Iterator(v::T, default::Int) where {T} = VI_Iterator(v, 1, default)
+
+function nextitem(v::VI_Iterator) 
+    if v.k > length(v.v)
+        return (v.default, v.default)
+    end
+    v.k += 1
+    return start(v.v[v.k-1]), stop(v.v[v.k-1])
+end
 
 
 function distribute(vi::Vector{Segment{T}}, bps::Vector{T}) where {T <: Integer}
@@ -18,21 +26,19 @@ function distribute(vi::Vector{Segment{T}}, bps::Vector{T}) where {T <: Integer}
     v2 = Vector{Segment{T}}()
     length(vi) == 0 && return (v1, v2)
 
-    vis = Iterators.Stateful(vi)
-
+    posmax = vi[end].stop + 1
+    vis = VI_Iterator(vi, posmax)
+    
     length(bps) == 0 && return (vi, v2)
     nextpushv1 = true
-
-    bpss = Iterators.Stateful(sort(bps))
+    
+    bpss = Iterators.Stateful(bps)
     nextbppos = popfirst!(bpss)
-
-    i = popfirst!(vis)
-    nextintervalstart = i.start
-    nextintervalstop = i.stop
-
-    k = 1
+    
+    nextintervalstart, nextintervalstop = nextitem(vis)
+    
     pos = min(nextintervalstop, nextbppos)
-    posmax = vi[end].stop + 1
+    k = 1
     while pos < posmax
         # @show (k, pos) (nextintervalstart, nextintervalstop, nextbppos)
 
@@ -45,7 +51,7 @@ function distribute(vi::Vector{Segment{T}}, bps::Vector{T}) where {T <: Integer}
             nextintervalstart = pos + 1
         end
         if pos == nextintervalstop
-            nextintervalstart, nextintervalstop = nextinterval(vis, posmax)
+            nextintervalstart, nextintervalstop = nextitem(vis)
         end
         if pos == nextbppos
             nextbppos = isempty(bpss) ? posmax : popfirst!(bpss)
@@ -76,12 +82,12 @@ function coalesce(
     v = Vector{Segment{T}}()
 
     posmax = max(v1[end].stop, v2[end].stop) + 1
-    
-    v1s = Iterators.Stateful(v1)
-    v2s = Iterators.Stateful(v2)
-    next1start, next1stop = nextinterval(v1s, posmax)
-    next2start, next2stop = nextinterval(v2s, posmax)
 
+    v1s = VI_Iterator(v1, posmax)
+    v2s = VI_Iterator(v2, posmax)
+    next1start, next1stop = nextitem(v1s)
+    next2start, next2stop = nextitem(v2s)
+    
     pos = min(next1start, next2start)
 
     while pos < posmax
@@ -106,29 +112,29 @@ function coalesce(
             @assert next1start == next2start
             tree = CoalescentTrees.SimpleCoalescentTree(tau)
             push!(vc, SegItem(Segment(next1start, pos), tree))
-            next1start, next1stop = nextinterval(v1s, posmax)
-            next2start, next2stop = nextinterval(v2s, posmax)
+            next1start, next1stop = nextitem(v1s)
+            next2start, next2stop = nextitem(v2s)
             nextpos = min(next1start, next2start)
         elseif pos == next1stop && next2start > pos
             push!(v, Segment(next1start, pos))
-            next1start, next1stop = nextinterval(v1s, posmax)
+            next1start, next1stop = nextitem(v1s)
             nextpos = min(next1start, next2start)
         elseif pos == next1stop && next2stop > pos
             @assert next1start == next2start
             tree = CoalescentTrees.SimpleCoalescentTree(tau)
             push!(vc, SegItem(Segment(next1start, pos), tree))
-            next1start, next1stop = nextinterval(v1s, posmax)
+            next1start, next1stop = nextitem(v1s)
             next2start = pos + 1
             nextpos = min(next1start, next2stop)
         elseif pos == next2stop && next1start > pos
             push!(v, Segment(next2start, pos))
-            next2start, next2stop = nextinterval(v2s, posmax)
+            next2start, next2stop = nextitem(v2s)
             nextpos = min(next1start, next2start)
         elseif pos == next2stop && next1stop > pos
             @assert next1start == next2start
             tree = CoalescentTrees.SimpleCoalescentTree(tau)
             push!(vc, SegItem(Segment(next1start, pos), tree))
-            next2start, next2stop = nextinterval(v2s, posmax)
+            next2start, next2stop = nextitem(v2s)
             next1start = pos + 1
             nextpos = min(next1stop, next2start)
         end
@@ -157,7 +163,8 @@ function IBDIterator(anc::StationaryPopulation)
 
         for vi in v1
             n_breaks = rand(Poisson(L * anc.recombination_rate))
-            bps = sort!(rand(1:L, n_breaks))
+            bps = rand(1:L, n_breaks)
+            sort!(bps)
             vi1, vi2 = distribute(vi, bps)
 
             if !isempty(vi1)

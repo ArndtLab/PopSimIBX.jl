@@ -1,4 +1,4 @@
-module Hudson 
+module Hudson
 
 using PopSimBase
 using Distributions
@@ -12,7 +12,7 @@ end
 
 VI_Iterator(v::T, default::Int) where {T} = VI_Iterator(v, 1, default)
 
-function nextitem(v::VI_Iterator) 
+function nextitem(v::VI_Iterator)
     if v.k > length(v.v)
         return (v.default, v.default)
     end
@@ -21,22 +21,22 @@ function nextitem(v::VI_Iterator)
 end
 
 
-function distribute(vi::Vector{Segment{T}}, bps::Vector{T}) where {T <: Integer}
+function distribute(vi::Vector{Segment{T}}, bps::Vector{T}) where {T<:Integer}
     v1 = Vector{Segment{T}}()
     v2 = Vector{Segment{T}}()
     length(vi) == 0 && return (v1, v2)
 
     posmax = vi[end].stop + 1
     vis = VI_Iterator(vi, posmax)
-    
+
     length(bps) == 0 && return (vi, v2)
     nextpushv1 = true
-    
+
     bpss = Iterators.Stateful(bps)
     nextbppos = popfirst!(bpss)
-    
+
     nextintervalstart, nextintervalstop = nextitem(vis)
-    
+
     pos = min(nextintervalstop, nextbppos)
     k = 1
     while pos < posmax
@@ -58,7 +58,7 @@ function distribute(vi::Vector{Segment{T}}, bps::Vector{T}) where {T <: Integer}
             nextpushv1 = !nextpushv1
         end
         # @show (nextintervalstart, nextintervalstop, nextbppos)
-            
+
         # @show v1 v2
 
         pos = min(nextintervalstop, nextbppos)
@@ -69,7 +69,7 @@ function distribute(vi::Vector{Segment{T}}, bps::Vector{T}) where {T <: Integer}
     v1, v2
 end
 
-function distribute(vi::Vector{Segment{T}}, rate::Float64) where {T <: Integer}
+function distribute(vi::Vector{Segment{T}}, rate::Float64) where {T<:Integer}
     length(vi) == 0 && return (Vector{Segment{T}}(), Vector{Segment{T}}())
 
     posmin = vi[1].start
@@ -86,15 +86,16 @@ end
 
 
 function coalesce(
-        v1::Vector{Segment{T}}, 
-        v2::Vector{Segment{T}}, 
-        vc::Vector{SegItem{T, CoalescentTrees.SimpleCoalescentTree}},
-        tau::F) where {T <: Integer, F <: Real}
+    v1::Vector{Segment{T}},
+    v2::Vector{Segment{T}},
+    vc::Vector{SegItem{T,CoalescentTrees.SimpleCoalescentTree}},
+    tau::F,
+) where {T<:Integer,F<:Real}
 
 
     length(v1) == 0 && return v2
     length(v2) == 0 && return v1
-    
+
     v = Vector{Segment{T}}()
 
     posmax = max(v1[end].stop, v2[end].stop) + 1
@@ -103,11 +104,11 @@ function coalesce(
     v2s = VI_Iterator(v2, posmax)
     next1start, next1stop = nextitem(v1s)
     next2start, next2stop = nextitem(v2s)
-    
+
     pos = min(next1start, next2start)
 
     while pos < posmax
-     
+
         if pos == next1start && next2start == pos
             nextpos = min(next1stop, next2stop)
         elseif pos == next1start && next2start > pos
@@ -157,7 +158,7 @@ function coalesce(
 
         pos = nextpos
     end
-   
+
     return v
 end
 
@@ -168,10 +169,10 @@ function IBDIterator(anc::StationaryPopulation)
     L = genome_length(anc)
     N = anc.population_size
 
-    T = Int 
-    v1 = [ [Segment{T}(1, L)], [Segment{T}(1, L)] ]
+    T = Int
+    v1 = [[Segment{T}(1, L)], [Segment{T}(1, L)]]
     v2 = similar(v1, 0)
-    vc = Vector{SegItem{T, CoalescentTrees.SimpleCoalescentTree}}()
+    vc = Vector{SegItem{T,CoalescentTrees.SimpleCoalescentTree}}()
 
     t = 1
     while true
@@ -181,7 +182,7 @@ function IBDIterator(anc::StationaryPopulation)
             vi1, vi2 = distribute(vi, anc.recombination_rate)
 
             if !isempty(vi1)
-                k = rand(1: 2 * N)
+                k = rand(1:2*N)
                 if k > length(v2)
                     push!(v2, vi1)
                 else
@@ -190,7 +191,7 @@ function IBDIterator(anc::StationaryPopulation)
             end
 
             if !isempty(vi2)
-                k = rand(1: 2 * N)
+                k = rand(1:2*N)
                 if k > length(v2)
                     push!(v2, vi2)
                 else
@@ -207,7 +208,7 @@ function IBDIterator(anc::StationaryPopulation)
         if isempty(v1)
             break
         end
-        
+
         t += 1
 
     end

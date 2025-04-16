@@ -250,7 +250,6 @@ end
     @test length(v) == 4 && length(vc) == 0
     @test vcat(v1, v2) == v
     
-    
     v1 = [Segment(1, 20)]
     v2 = [Segment(4,6)] 
     v = Hudson.coalesce(v1, v2, empty!(vc), t)

@@ -356,3 +356,29 @@ end
 
     end
 end
+
+
+
+@testitem "Hudson VaryingPopulation" begin
+    using PopSimIBX.Hudson
+
+
+    for genome_length in [1000, 10000, 1000000],
+            population_size in [100, 1000, 10000],
+            recombination_rate in [1.0e-8, 1.0e-9],
+            mutation_rate in [1.0e-9, 1.0e-10]
+            
+
+        ps = [population_size*2, population_size ÷ 2, population_size]
+        ts = [0.0, 100, 200]
+        pop = VaryingPopulation(; genome_length, recombination_rate, population_sizes = ps, times = ts)
+        @test length(pop.times) == length(pop.population_sizes)
+
+        ibds = Hudson.IBDIterator(pop)
+        @test sum(segment_length, ibds) == genome_length
+
+        @test sum(segment_length, IBAIterator(ibds)) == genome_length
+        @test sum(segment_length, IBSIterator(ibds, pop.mutation_rate)) == genome_length
+
+    end
+end

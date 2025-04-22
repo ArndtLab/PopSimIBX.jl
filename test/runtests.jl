@@ -342,7 +342,7 @@ end
 
 
     for genome_length in [1000, 10000, 1000000],
-            population_size in [100, 1000, 10000],
+            population_size in [100, 1000],
             recombination_rate in [1.0e-8, 1.0e-9],
             mutation_rate in [1.0e-9, 1.0e-10]
             
@@ -364,7 +364,7 @@ end
 
 
     for genome_length in [1000, 10000, 1000000],
-            population_size in [100, 1000, 10000],
+            population_size in [100, 1000],
             recombination_rate in [1.0e-8, 1.0e-9],
             mutation_rate in [1.0e-9, 1.0e-10]
             

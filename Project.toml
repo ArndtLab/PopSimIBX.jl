@@ -1,7 +1,7 @@
 name = "PopSimIBX"
 uuid = "88d7705d-7f72-40d5-8927-d9bc8cbe062a"
 authors = ["Peter Arndt <arndt@molgen.mpg.de> and contributors"]
-version = "0.3.2"
+version = "0.3.3"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"

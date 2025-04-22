@@ -164,22 +164,23 @@ end
 
 
 
-function IBDIterator(anc::StationaryPopulation)
+function IBDIterator(pop::Union{StationaryPopulation, VaryingPopulation})
 
-    L = genome_length(anc)
-    N = anc.population_size
 
-    T = Int
-    v1 = [[Segment{T}(1, L)], [Segment{T}(1, L)]]
+    t = 0.0
+    L = genome_length(pop)
+
+    v1 = [[Segment{Int}(1, L)], [Segment{Int}(1, L)]]
     v2 = similar(v1, 0)
-    vc = Vector{SegItem{T,CoalescentTrees.SimpleCoalescentTree}}()
+    vc = Vector{SegItem{Int,CoalescentTrees.SimpleCoalescentTree}}()
 
-    t = 1
+    t = 1.0
     while true
         empty!(v2)
 
+        N = population_size(pop, t)
         for vi in v1
-            vi1, vi2 = distribute(vi, anc.recombination_rate)
+            vi1, vi2 = distribute(vi, pop.recombination_rate)
 
             if !isempty(vi1)
                 k = rand(1:2*N)

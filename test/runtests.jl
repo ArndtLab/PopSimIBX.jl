@@ -231,6 +231,18 @@ end
 end
 
 
+@testitem "Hudson distribute rate" begin
+    using PopSimIBX.Hudson
+
+    vi = [Segment(1, 1000000)]
+    v1, v2 = Hudson.distribute(vi, 1e-3)
+
+    @test length(v1) > 0
+    @test length(v2) > 0
+    @test sum(segment_length, v1) + sum(segment_length, v2) == 1000000
+end
+
+
 @testitem "Hudson coalesce" begin
     using PopSimIBX.Hudson
 

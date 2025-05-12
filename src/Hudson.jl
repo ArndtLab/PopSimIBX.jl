@@ -69,15 +69,16 @@ function distribute(vi::Vector{Segment{T}}, bps::Vector{T}) where {T<:Integer}
     v1, v2
 end
 
-function distribute(vi::Vector{Segment{T}}, rate::Float64) where {T<:Integer}
-    length(vi) == 0 && return (Vector{Segment{T}}(), Vector{Segment{T}}())
 
-    posmin = vi[1].start
-    posmax = vi[end].stop + 1
+function distribute(vi::Vector, rate::Float64)
+    length(vi) == 0 && return (similar(vi, 0), similar(vi, 0))
+
+    posmin = start(vi[1])
+    posmax = stop(vi[end]) + 1
 
 
     n_breaks = rand(Poisson(rate * (posmax - posmin)))
-    n_breaks == 0 && return (vi, Vector{Segment{T}}())
+    n_breaks == 0 && return (vi, similar(vi, 0))
     bps = rand(posmin:(posmax-1), n_breaks)
     sort!(bps)
 

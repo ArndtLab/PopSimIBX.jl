@@ -247,7 +247,7 @@ end
     using PopSimIBX.Hudson
 
 
-    t = 1    
+    t = -1    
     vc = Vector{SegItem{Int, CoalescentTrees.SimpleCoalescentTree}}()
     v1 = [Segment(1, 2), Segment(3, 4)]
     v2 = [Segment(5, 6), Segment(7, 8)]
@@ -394,3 +394,189 @@ end
 
     end
 end
+
+@testitem "HudsonMulti" begin
+    h1 = Hudson.HudsonARG{Int}(1, 0)
+    h2 = Hudson.HudsonARG{Int}(1, 0)
+    @show h1 h2
+
+    h = Hudson.HudsonARG{Int}(1, 3, h1, h2)
+
+    @show h
+
+
+    genome_length = 1000
+    population_size = 100
+    recombination_rate = 1.0e-8
+    mutation_rate = 1.0e-9
+    pop = StationaryPopulation(; genome_length, recombination_rate, population_size)
+
+    ibds = Hudson.IBDIteratorMulti(pop, 4)
+    @show ibds
+end
+
+
+
+
+@testitem "Hudson Multi distribute" begin
+    using PopSimIBX.Hudson
+    bps = [10, 20, 30, 100, 110, 120, 130, 140, 150, 160]
+
+    vi = [SegItem(Segment(2, 4), Hudson.HudsonARG{Int}(1, 0))]
+    v1, v2 = Hudson.distribute(vi, bps)
+    @test length(v1) == 1 && length(v2) == 0
+
+
+    vi = [SegItem(Segment(2, 4), Hudson.HudsonARG{Int}(1, 0))]
+    v1, v2 = Hudson.distribute(vi, bps)
+    @test length(v1) == 1 && length(v2) == 0
+
+    vi = [SegItem(Segment(1, 1), Hudson.HudsonARG{Int}(1, 0))]
+    v1, v2 = Hudson.distribute(vi, bps)
+    @test length(v1) == 1 && length(v2) == 0
+
+
+    vi = [SegItem(Segment(172, 175), Hudson.HudsonARG{Int}(1, 0))]
+    v1, v2 = Hudson.distribute(vi, bps)
+    @test length(v1) + length(v2) == 1
+
+
+    vi = [SegItem(Segment(12, 14), Hudson.HudsonARG{Int}(1, 0))]
+    v1, v2 = Hudson.distribute(vi, bps)
+    @test length(v1) == 0 && length(v2) == 1
+
+    vi = [SegItem(Segment(2, 4), Hudson.HudsonARG{Int}(1, 0)), SegItem(Segment(12, 14), Hudson.HudsonARG{Int}(1, 0))]
+    v1, v2 = Hudson.distribute(vi, bps)
+    @test length(v1) == 1 && length(v2) == 1
+
+
+    vi = [SegItem(Segment(2, 10), Hudson.HudsonARG{Int}(1, 0))]
+    v1, v2 = Hudson.distribute(vi, bps)
+    @test length(v1) == 1 && length(v2) == 0
+
+    vi = [SegItem(Segment(11, 14), Hudson.HudsonARG{Int}(1, 0))]
+    v1, v2 = Hudson.distribute(vi, bps)
+    @test length(v1) == 0 && length(v2) == 1
+
+    vi = [SegItem(Segment(2, 10), Hudson.HudsonARG{Int}(1, 0)), SegItem(Segment(11, 14), Hudson.HudsonARG{Int}(1, 0))]
+    v1, v2 = Hudson.distribute(vi, bps)
+    @test length(v1) == 1 && length(v2) == 1
+
+    vi = [SegItem(Segment(2, 14), Hudson.HudsonARG{Int}(1, 0))]
+    v1, v2 = Hudson.distribute(vi, bps)
+    @test length(v1) == 1 && length(v2) == 1
+
+
+    vi = [SegItem(Segment(2, 24), Hudson.HudsonARG{Int}(1, 0))]
+    v1, v2 = Hudson.distribute(vi, bps)
+    @test length(v1) == 2 && length(v2) == 1
+
+    vi = [SegItem(Segment(2, 34), Hudson.HudsonARG{Int}(1, 0))]
+    v1, v2 = Hudson.distribute(vi, bps)
+    @test length(v1) == 2 && length(v2) == 2
+
+    vi = similar([SegItem(Segment(2, 34), Hudson.HudsonARG{Int}(1, 0))], 0)
+    v1, v2 = Hudson.distribute(vi, bps)
+    @test length(v1) == 0 && length(v2) == 0
+
+    vi = [SegItem(Segment(2, 34), Hudson.HudsonARG{Int}(1, 0))]
+    v1, v2 = Hudson.distribute(vi, Int[])
+    @test length(v1) == 1 && length(v2) == 0
+
+end
+
+
+@testitem "Hudson Multi coalesce" begin
+    using PopSimIBX.Hudson
+
+
+    t = 1 
+    
+    h1 = Hudson.HudsonARG{Int}(1, 0)
+    h2 = Hudson.HudsonARG{Int}(2, 0)
+    h3 = Hudson.HudsonARG{Int}(3, 0)
+   
+    v1 = [SegItem(Segment(1, 2), h1), SegItem(Segment(3, 4), h2)]
+    v2 = [SegItem(Segment(5, 6), h3), SegItem(Segment(7, 8), h1)]
+
+
+    vc = similar(v1, 0)
+    v = Hudson.coalesce(v1, v2, vc, t, 3)
+    @test length(v) == 4 && length(vc) == 0
+   
+    
+    v1 = [SegItem(Segment(1, 2), h1)]
+    v2 = [SegItem(Segment(1, 2), h2)]
+    v3 = [SegItem(Segment(1, 2), h3)]
+    vc = similar(v1, 0)
+    v4 = Hudson.coalesce(v1, v2, vc, t, 3)
+    @test length(v4) == 1 && length(vc) == 0
+
+    t += 1
+    v5 = Hudson.coalesce(v4, v3, vc, t, 3)
+    @test length(v5) == 0 && length(vc) == 1
+
+end
+   
+
+
+@testitem "Hudson Multi StationaryPopulation" begin
+    using PopSimIBX.Hudson
+
+
+    for genome_length in [1000, 10000, 1000000],
+            population_size in [100, 1000],
+            recombination_rate in [1.0e-8, 1.0e-9],
+            mutation_rate in [1.0e-4, 1.0e-10]
+            
+        pop = StationaryPopulation(; genome_length, recombination_rate, population_size)
+
+        ibds = Hudson.IBDIteratorMulti(pop, 4)
+        @test sum(segment_length, ibds) == genome_length
+
+        ibdm = IBMIterator(ibds, pop.mutation_rate)
+        @test sum(segment_length, ibdm) == genome_length
+
+        ibs = IBSIterator(ibdm, 1, 2)
+        @test sum(segment_length, ibs) == genome_length
+
+        ibs = IBSIterator(ibdm, 1, 4)
+        @test sum(segment_length, ibs) == genome_length
+
+    end
+
+end
+
+@testitem "Hudson Multi createbranches" begin
+    using PopSimIBX.Hudson
+
+    h1 = Hudson.HudsonARG{Int}(1, 0)
+    h2 = Hudson.HudsonARG{Int}(2, 0)
+    h3 = Hudson.HudsonARG{Int}(3, 0)
+    h4 = Hudson.HudsonARG{Int}(4, 0)
+    h5 = Hudson.HudsonARG{Int}(5, 0)
+    h6 = Hudson.HudsonARG{Int}(6, 6, h2, h3)
+    h7 = Hudson.HudsonARG{Int}(7, 7, h4, h5)
+    h8 = Hudson.HudsonARG{Int}(8, 8, h6, h1)
+    h9 = Hudson.HudsonARG{Int}(9, 9, h7, h8)
+
+
+
+    n = 5
+    ids = collect(1:n)
+    first_id = 2 * n - 1 
+    idc = first_id
+    first_time = float(h9.time)
+    last_time = 0.0 
+    branches = fill((pid = -1, time = 0.0, vid_anc = -1), idc)
+
+    nextinternal = idc - 1
+    parent_idc = -1
+    Hudson.createbranches!(h9, branches, nextinternal, idc, parent_idc)
+
+    tree = CoalescentTrees.CoalescentTree(ids, first_id, first_time, last_time, branches)
+    @show tree
+    @show branches
+    @test 1 == 1 
+end
+

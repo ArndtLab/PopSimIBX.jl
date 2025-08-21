@@ -3,7 +3,24 @@ using TestItemRunner
 @run_package_tests  verbose = true
 
 
+@testitem "IBS kwargs" begin
+    tau = 100.0
+    tree = CoalescentTrees.SimpleCoalescentTree(tau)
 
+    ibds = [SegItem(Segment(1, 1000), tree), SegItem(Segment(1001, 2000), tree)]
+    ibs = collect(IBSIterator(ibds, 0.1))
+    @test length(ibs) > 3000
+    @test sum(segment_length, ibs) === 2000
+
+    ibs = collect(IBSIterator(ibds, 0.1, multiple_hits = :as_one))
+    @test length(ibs) in [1999,2000,2001]
+    @test sum(segment_length, ibs) === 2000
+
+    ibs = collect(IBSIterator(ibds, 0.1, multiple_hits = :JCcorrected))
+    @test length(ibs) < 1750
+    @test sum(segment_length, ibs) === 2000
+
+end
 
 @testitem "SMC" begin
     using .PopSimBase

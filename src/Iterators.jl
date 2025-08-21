@@ -60,23 +60,26 @@ end
 # -----------------------------------------------------------------------------
 
 
-function break_segment(L::Int64, prob::Float64, allow_multiple_hits = true)
-    if prob == Inf
-        return collect(1:L)
-    end
-    n_breaks = rand(Poisson(L * prob))
-    n_breaks == 0 && return Int64[]
-    if allow_multiple_hits
-        r = rand(1:L, n_breaks)
-        return unique!(sort!(r))
+function break_segment(L::Int64, prob::Float64; multiple_hits = :ignore)
+    prob == Inf && throw(ArgumentError("The probability of a break must be finite"))
+    L <= 0 && return Int64[]
+
+    if multiple_hits == :ignore
+        k = rand(Poisson(L * prob))
+        return sort!(rand(1:L, k))
+    elseif multiple_hits == :as_one
+        k = rand(Poisson(L * prob))
+        return unique!(sort!(rand(1:L, k)))
+    elseif multiple_hits == :JCcorrected
+        prob_corrected = (3/4) * (1 - exp(- 4 * prob / 3))
+        k = rand(Poisson(L * prob_corrected))
+        k == 0 && return Int64[]
+        k >= L && return collect(1:L)
+        return sort!(sample(1:L, k; replace = false))
     else
-        n_breaks >= L && return collect(1:L)
-        r = sample(1:L, n_breaks, replace = false)
-        return sort!(r)
+        throw(ArgumentError("Unknown multiple_hits option: $multiple_hits"))
     end
 end
-
-
 
 
 mutable struct IBSIteratorNonMutated{T} <: AbstractSegmentsIterator
@@ -84,9 +87,10 @@ mutable struct IBSIteratorNonMutated{T} <: AbstractSegmentsIterator
     breaks::Vector{Int64}
     lastibxstop::Int64
     mutation_rate::Float64
+    kwargs::Dict{Symbol, Any}
 end
 
-IBSIteratorNonMutated(ibx, mutation_rate) = IBSIteratorNonMutated(ibx, Int[], 0, mutation_rate)
+IBSIteratorNonMutated(ibx, mutation_rate; kwargs...) = IBSIteratorNonMutated(ibx, Int[], 0, mutation_rate, Dict{Symbol, Any}(kwargs))
 
 
 Base.IteratorSize(::Type{IBSIteratorNonMutated{T}}) where {T} = Base.SizeUnknown()
@@ -110,7 +114,7 @@ function Base.iterate(si::IBSIteratorNonMutated)
 
     dt = CoalescentTrees.time_span(data(seg))
     si.breaks =
-        (start(seg) - 1) .+ break_segment(segment_length(seg), 2 * si.mutation_rate * dt)
+        (start(seg) - 1) .+ break_segment(segment_length(seg), 2 * si.mutation_rate * dt; si.kwargs...)
     si.lastibxstop = stop(seg)
     state = IBSIteratorNonMutatedState(ibx[2], 0, 1)
     iterate(si, state)
@@ -144,7 +148,7 @@ function Base.iterate(si::IBSIteratorNonMutated, state)
             dt = CoalescentTrees.time_span(data(seg))
             si.breaks =
                 (start(seg) - 1) .+
-                break_segment(segment_length(seg), 2 * si.mutation_rate * dt)
+                break_segment(segment_length(seg), 2 * si.mutation_rate * dt; si.kwargs...)
             si.lastibxstop = stop(seg)
 
             if isempty(si.breaks) # no breaks in ibx
@@ -353,15 +357,14 @@ function Base.iterate(si::IBSIteratorMutated, state)
 end
 
 
-IBSIterator(collection, args...) = _IBSIterator(collection, Base.IteratorEltype(collection), args...)
-_IBSIterator(collection, ::Base.EltypeUnknown, args...) = throw(ArgumentError("The eltype of the collection is unknown"))
-_IBSIterator(collection, ::Base.HasEltype, args...) =  _IBSIterator(collection, eltype(collection), args...)
-    # (println("eltype = $(eltype(collection))"); _f(collection, eltype(collection), args...))
+IBSIterator(collection, args...; kwargs...) = _IBSIterator(collection, Base.IteratorEltype(collection), args...; kwargs...)
+_IBSIterator(collection, ::Base.EltypeUnknown, args...; kwargs...) = throw(ArgumentError("The eltype of the collection is unknown"))
+_IBSIterator(collection, ::Base.HasEltype, args...; kwargs...) =  _IBSIterator(collection, eltype(collection), args...; kwargs...)
 
-    
-_IBSIterator(collection, ::Type{SegItem{Int64, PopSimBase.CoalescentTrees.SimpleCoalescentTree}}, args...)  = IBSIteratorNonMutated(collection, args...)
-_IBSIterator(collection, ::Type{SegItem{Int64, T}}, args...) where {T<:PopSimBase.CoalescentTrees.MutatedCoalescentTree} = IBSIteratorMutated(collection, args...)
-_IBSIterator(collection, ::Type{SegItem{Int64, T}}, args...) where {T<:PopSimBase.CoalescentTrees.MutatedSimpleCoalescentTree} = IBSIteratorMutated(collection, args...)
+
+_IBSIterator(collection, ::Type{SegItem{Int64, PopSimBase.CoalescentTrees.SimpleCoalescentTree}}, args...; kwargs...)  = IBSIteratorNonMutated(collection, args...; kwargs...)
+_IBSIterator(collection, ::Type{SegItem{Int64, T}}, args...; kwargs...) where {T<:PopSimBase.CoalescentTrees.MutatedCoalescentTree} = IBSIteratorMutated(collection, args...; kwargs...)
+_IBSIterator(collection, ::Type{SegItem{Int64, T}}, args...; kwargs...) where {T<:PopSimBase.CoalescentTrees.MutatedSimpleCoalescentTree} = IBSIteratorMutated(collection, args...; kwargs...)
 
 
 end
